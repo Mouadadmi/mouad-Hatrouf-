@@ -1,0 +1,452 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Car,
+  ShieldCheck,
+  Truck,
+  Sparkles,
+  ArrowLeft,
+  CheckCircle,
+  AlertCircle,
+  PhoneCall,
+  User,
+  Phone,
+  MessageCircle,
+  HelpCircle,
+  ChevronDown,
+  X,
+  Droplets,
+  Eye,
+  Check
+} from 'lucide-react';
+
+// رقم الواتساب الخاص بك
+export const STORE_WHATSAPP_NUMBER = '212617641774';
+
+// المدن المغربية
+export const MOROCCAN_CITIES: string[] = [
+  'الدار البيضاء', 'الرباط', 'طنجة', 'مراكش', 'فاس', 'أكادير', 'سلا', 'مكناس',
+  'وجدة', 'القنيطرة', 'تطوان', 'تمارة', 'آسفي', 'العيون', 'المحمدية', 'الجديدة',
+  'بني ملال', 'الناظور', 'تازة', 'سطات', 'برشيد', 'الخميسات', 'العرائش', 'كلميم',
+  'بركان', 'خريبكة', 'الصويرة', 'تارودانت', 'ورزازات', 'مدينة أخرى بالمغرب'
+];
+
+// دالة توليد رابط الواتساب الشامل
+export function buildWhatsAppOrderLink(order: {
+  fullName: string;
+  phone: string;
+  city: string;
+  address?: string;
+  totalPrice: number;
+  orderId: string;
+}) {
+  const cleanPhone = STORE_WHATSAPP_NUMBER.replace(/[^0-9]/g, '');
+  const text = `*طلب جديد عبر الموقع* 🛒
+━━━━━━━━━━━━━━━━━━
+👤 *الاسم الكامل:* ${order.fullName}
+📱 *رقم الهاتف:* ${order.phone}
+🏙️ *المدينة:* ${order.city}
+📍 *العنوان:* ${order.address || 'سيتم تأكيده هاتفياً'}
+━━━━━━━━━━━━━━━━━━
+📦 *المنتج:* منظف زجاج ومرايا السيارات LICHI الأصلي
+💰 *المبلغ الإجمالي:* ${order.totalPrice} درهم
+💵 *طريقة الدفع:* الدفع عند الاستلام (COD)
+🔖 *رقم الطلب:* ${order.orderId}
+━━━━━━━━━━━━━━━━━━
+عافاك أكد ليا الطلبية والتوصيل وشكراً.`;
+
+  return `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(text)}`;
+}
+
+export function App() {
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [city, setCity] = useState('الدار البيضاء');
+  const [address, setAddress] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submittedWhatsappUrl, setSubmittedWhatsappUrl] = useState<string | null>(null);
+  const [orderModal, setOrderModal] = useState<any>(null);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  const scrollToOrder = () => {
+    document.getElementById('order-form')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const normalizePhone = (str: string) => {
+    return str
+      .replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString())
+      .replace(/[^0-9+]/g, '');
+  };
+
+  const handleOrderSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newErrors: Record<string, string> = {};
+
+    if (!fullName.trim()) newErrors.fullName = 'يرجى إدخال اسمك الكريم';
+    const cleanP = normalizePhone(phone);
+    if (!cleanP || cleanP.length < 8) newErrors.phone = 'يرجى إدخال رقم هاتف صحيح';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    setErrors({});
+
+    const orderId = 'MA-' + Math.floor(100000 + Math.random() * 900000);
+    const orderData = {
+      fullName: fullName.trim(),
+      phone: cleanP,
+      city,
+      address: address.trim(),
+      totalPrice: 50,
+      orderId
+    };
+
+    const waLink = buildWhatsAppOrderLink(orderData);
+    setSubmittedWhatsappUrl(waLink);
+
+    // توجيه تلقائي مباشر
+    try {
+      const a = document.createElement('a');
+      a.href = waLink;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        try { document.body.removeChild(a); } catch (_) {}
+      }, 300);
+    } catch (_) {}
+
+    try { window.open(waLink, '_blank'); } catch (_) {}
+    setOrderModal(orderData);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#070b14] text-slate-100 font-sans pb-24 sm:pb-0" dir="rtl">
+      
+      {/* 1. الشريط العلوي Header */}
+      <header className="sticky top-0 z-40 bg-[#0a0f1d]/90 backdrop-blur-md border-b border-slate-800/80 py-3.5 px-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <Car className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-base sm:text-lg font-black tracking-tight text-white block">LICHI Car Clean</span>
+              <span className="text-[11px] text-amber-400/90 font-bold block">منظف وطارد المطر الأصلي (50 درهم)</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <a
+              href={`https://api.whatsapp.com/send?phone=${STORE_WHATSAPP_NUMBER}&text=${encodeURIComponent('السلام عليكم، بغيت نستفسر على منظف الزجاج LICHI (50 درهم).')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 px-3 sm:px-4 rounded-xl flex items-center gap-1.5 shadow-md"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>واتساب</span>
+            </a>
+            <button
+              onClick={scrollToOrder}
+              className="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-black py-2 px-4 rounded-xl shadow cursor-pointer"
+            >
+              اطلب الآن
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* 2. الواجهة الرئيسية Hero مع الصورة الوحيدة */}
+      <section className="relative pt-10 pb-16 px-4 bg-gradient-to-b from-slate-950 via-[#0a0f1d] to-slate-900 border-b border-slate-800">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-12 gap-10 items-center">
+          
+          <div className="lg:col-span-7 space-y-6 text-right">
+            <span className="inline-flex items-center gap-2 bg-amber-500/10 text-amber-400 border border-amber-500/30 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-black">
+              <Sparkles className="w-4 h-4" />
+              <span>عرض خاص بالمغرب: 50 درهم فقط</span>
+            </span>
+
+            <h1 className="text-3xl sm:text-5xl font-black text-white leading-tight">
+              تخلص نهائياً من قطرات المطر والضباب على مرايا وزجاج سيارتك
+            </h1>
+
+            <p className="text-slate-300 text-base sm:text-lg leading-relaxed">
+              منظف وطارد مياه فوري نانوي أصلي، يمنحك رؤية فائقة الوضوح بنسبة 100% أثناء القيادة في الأمطار، الضباب أو الأجواء الصعبة.
+            </p>
+
+            <div className="flex flex-wrap gap-4 pt-2">
+              <button
+                onClick={scrollToOrder}
+                className="bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 font-black text-base sm:text-lg py-3.5 px-8 rounded-2xl shadow-xl flex items-center gap-2 cursor-pointer"
+              >
+                <span>اطلب بـ 50 درهم فقط</span>
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+
+              <a
+                href={`https://api.whatsapp.com/send?phone=${STORE_WHATSAPP_NUMBER}&text=${encodeURIComponent('السلام عليكم، بغيت نطلب منظف زجاج السيارات LICHI بـ 50 درهم والدفع عند الاستلام.')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-base py-3.5 px-6 rounded-2xl flex items-center gap-2 border border-emerald-500/40"
+              >
+                <MessageCircle className="w-5 h-5" />
+                <span>طلب سريع بالواتساب</span>
+              </a>
+            </div>
+          </div>
+
+          {/* الصورة الوحيدة في الموقع */}
+          <div className="lg:col-span-5">
+            <div className="rounded-3xl p-5 bg-gradient-to-b from-slate-800/90 via-slate-900 to-[#0b1120] border border-slate-700 shadow-2xl space-y-4">
+              <div className="relative rounded-2xl overflow-hidden aspect-4/3 border border-slate-700 bg-slate-950">
+                <img
+                  src="/src/assets/images/lichi_mirror_comparison_1789488392865.jpg"
+                  alt="منظف مرايا وزجاج السيارات LICHI - مقارنة قبل وبعد الاستخدام"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-2.5 right-2.5 bg-red-600 text-white text-[11px] font-black px-2.5 py-0.5 rounded-lg shadow">
+                  LICHI الأصلي
+                </div>
+                <div className="absolute bottom-2 left-2 right-2 bg-slate-950/90 p-2 rounded-xl flex items-center justify-between text-xs">
+                  <span className="text-white font-bold">مقارنة الرؤية قبل وبعد</span>
+                  <span className="text-amber-400 font-extrabold">50 درهم فقط</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-slate-300 pt-2 border-t border-slate-800">
+                <span className="flex items-center gap-1"><ShieldCheck className="w-4 h-4 text-emerald-400" /> منتج أصلي ومضمون</span>
+                <span className="flex items-center gap-1"><Truck className="w-4 h-4 text-sky-400" /> توصيل سريع لباب الدار</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* 3. المميزات السريعة */}
+      <section className="py-12 px-4 max-w-5xl mx-auto">
+        <div className="grid sm:grid-cols-3 gap-5 text-right">
+          <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl space-y-2">
+            <Droplets className="w-6 h-6 text-sky-400" />
+            <h3 className="font-bold text-white text-base">طرد فوري للمياه والضباب</h3>
+            <p className="text-slate-400 text-xs leading-relaxed">تتدحرج قطرات المطر تلقائياً بمجرد ملامستها للزجاج أو المرايا دون أن تحجب الرؤية.</p>
+          </div>
+          <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl space-y-2">
+            <Eye className="w-6 h-6 text-amber-400" />
+            <h3 className="font-bold text-white text-base">رؤية واضحة وأمان مضاعف</h3>
+            <p className="text-slate-400 text-xs leading-relaxed">يحميك من النقاط العمياء والحوادث المفاجئة الناتجة عن انعدام الرؤية الجانبية أثناء المطر.</p>
+          </div>
+          <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl space-y-2">
+            <ShieldCheck className="w-6 h-6 text-emerald-400" />
+            <h3 className="font-bold text-white text-base">سهل الاستخدام ويدوم طويلاً</h3>
+            <p className="text-slate-400 text-xs leading-relaxed">رشة واحدة ومسحة خفيفة كافية لحماية الزجاج لأسابيع دون أن يترك أي آثار أو خطوط دهنية.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. استمارة الطلب المتصلة بالواتساب */}
+      <section id="order-form" className="py-16 px-4 bg-gradient-to-b from-slate-900 to-[#080d1a]">
+        <div className="max-w-xl mx-auto">
+          <div className="text-center mb-8 space-y-2">
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-amber-500/10 text-amber-400 border border-amber-500/30">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>طلب مباشر - الدفع عند الاستلام</span>
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-white">املأ معلوماتك وسيصلك للمنزل</h2>
+            <p className="text-slate-400 text-xs sm:text-sm">سيتصل بك الموزع لتسليمك الطلب والدفع نقداً عند استلامك للمنتج</p>
+          </div>
+
+          <form onSubmit={handleOrderSubmit} className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl text-right">
+            
+            {/* اختيار السعر */}
+            <div className="p-4 bg-amber-500/10 border-2 border-amber-500/50 rounded-2xl flex items-center justify-between">
+              <div>
+                <span className="text-white font-bold text-sm block">منظف زجاج ومرايا LICHI الأصلي</span>
+                <span className="text-xs text-slate-400">عبوة واحدة مع ملحقات التطبيق</span>
+              </div>
+              <div className="text-left">
+                <span className="text-amber-400 text-2xl font-black">50 DH</span>
+                <span className="text-xs text-slate-500 line-through block">99 DH</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm font-bold text-slate-300 mb-1">الاسم الكامل *</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="محمد العلوي"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className={`w-full bg-slate-950 border rounded-xl py-3 pr-10 pl-4 text-white text-sm focus:outline-none ${errors.fullName ? 'border-red-500' : 'border-slate-700 focus:border-amber-500'}`}
+                />
+                <User className="absolute right-3.5 top-3.5 w-4 h-4 text-slate-400" />
+              </div>
+              {errors.fullName && <p className="text-red-400 text-xs mt-1">{errors.fullName}</p>}
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm font-bold text-slate-300 mb-1">رقم الهاتف *</label>
+              <div className="relative">
+                <input
+                  type="tel"
+                  dir="ltr"
+                  placeholder="0612345678"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className={`w-full bg-slate-950 border rounded-xl py-3 pr-4 pl-10 text-white text-sm text-right focus:outline-none ${errors.phone ? 'border-red-500' : 'border-slate-700 focus:border-amber-500'}`}
+                />
+                <Phone className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+              </div>
+              {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone}</p>}
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm font-bold text-slate-300 mb-1">المدينة *</label>
+              <select
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 px-4 text-white text-sm focus:border-amber-500 focus:outline-none"
+              >
+                {MOROCCAN_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm font-bold text-slate-300 mb-1">العنوان (اختياري)</label>
+              <textarea
+                rows={2}
+                placeholder="اسم الحي أو الشارع ورقم المنزل"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none resize-none"
+              />
+            </div>
+
+            {/* تنبيه رابط الواتساب المباشر الاحتياطي */}
+            {submittedWhatsappUrl && (
+              <div className="p-4 bg-emerald-500/15 border border-emerald-500 rounded-2xl text-center space-y-2 animate-pulse">
+                <p className="text-emerald-400 font-bold text-xs">تم تسجيل بياناتك! إذا لم يتم نقلك تلقائياً:</p>
+                <a
+                  href={submittedWhatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-3 px-4 rounded-xl text-sm shadow w-full"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span>اضغط هنا لفتح واتساب وإرسال الطلب فوراً 📲</span>
+                </a>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-emerald-500 via-emerald-400 to-green-500 hover:from-emerald-400 text-slate-950 text-lg font-black py-4 px-6 rounded-2xl shadow-xl shadow-emerald-500/25 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+            >
+              <MessageCircle className="w-6 h-6 text-slate-950" />
+              <span>اطلب الآن عبر واتساب</span>
+              <span className="text-sm bg-slate-950/20 px-2.5 py-0.5 rounded-lg font-bold">50 DH</span>
+            </button>
+
+            <p className="text-center text-xs text-slate-400">
+              💵 الدفع عند الاستلام - خلاصك حتى توصلك السلعة لباب دارك وتفحصها بنفسك
+            </p>
+          </form>
+        </div>
+      </section>
+
+      {/* 5. الأسئلة الشائعة FAQ */}
+      <section className="py-12 px-4 max-w-3xl mx-auto text-right">
+        <h2 className="text-2xl font-black text-center text-white mb-6">الأسئلة الشائعة</h2>
+        <div className="space-y-3">
+          {[
+            { q: 'كم يستغرق التوصيل؟', a: 'التوصيل سريع ويستغرق عادة بين 24 إلى 48 ساعة لجميع مدن المغرب.' },
+            { q: 'متى أقوم بالدفع؟', a: 'الدفع عند الاستلام فقط، حتى تتسلم الطرد وتتأكد من المنتج.' },
+            { q: 'هل المنتج مناسب لجميع أنواع السيارات؟', a: 'نعم، صالح لجميع زجاج ومرايا السيارات والمركبات والدراجات النارية.' }
+          ].map((item, idx) => (
+            <div key={idx} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+              <button
+                onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                className="w-full p-4 text-right font-bold text-sm sm:text-base flex items-center justify-between text-white"
+              >
+                <span>{item.q}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${openFaq === idx ? 'rotate-180 text-amber-400' : 'text-slate-400'}`} />
+              </button>
+              {openFaq === idx && (
+                <div className="p-4 pt-0 text-xs sm:text-sm text-slate-400 border-t border-slate-800/50">
+                  {item.a}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 6. نافذة التأكيد المنبثقة Modal */}
+      {orderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+          <div className="relative w-full max-w-md bg-[#0c1322] border-2 border-emerald-500/40 rounded-3xl p-6 shadow-2xl text-right space-y-4">
+            <button onClick={() => setOrderModal(null)} className="absolute top-4 left-4 text-slate-400 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto">
+                <CheckCircle className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-black text-white">تم تسجيل طلبك بنجاح!</h3>
+              <p className="text-xs text-slate-400">اضغط أدناه لإرسال تفاصيل طلبك مباشرة على واتساب لتأكيد الشحن فوراً.</p>
+            </div>
+
+            <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 text-xs space-y-2">
+              <div className="flex justify-between"><span className="text-slate-400">الاسم:</span><span className="font-bold text-white">{orderModal.fullName}</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">رقم الهاتف:</span><span className="font-bold text-white" dir="ltr">{orderModal.phone}</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">المدينة:</span><span className="font-bold text-white">{orderModal.city}</span></div>
+              <div className="flex justify-between border-t border-slate-800 pt-2"><span className="text-slate-400">الإجمالي:</span><span className="font-black text-amber-400">50 DH (عند الاستلام)</span></div>
+            </div>
+
+            <a
+              href={submittedWhatsappUrl || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+            >
+              <MessageCircle className="w-5 h-5" />
+              <span>فتح الواتساب وإرسال الطلب الآن 📲</span>
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* 7. الشريط السفلي للهواتف Sticky Mobile Bar */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0a0f1d]/95 backdrop-blur-lg border-t border-slate-800 p-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <span className="text-[10px] text-slate-400 block">السعر الإجمالي:</span>
+            <span className="text-amber-400 font-black text-lg">50 DH</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <a
+              href={`https://api.whatsapp.com/send?phone=${STORE_WHATSAPP_NUMBER}&text=${encodeURIComponent('السلام عليكم، أريد طلب منظف الزجاج LICHI (50 درهم).')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white"
+            >
+              <MessageCircle className="w-5 h-5" />
+            </a>
+            <button
+              onClick={scrollToOrder}
+              className="bg-amber-500 text-slate-950 font-black text-sm py-2.5 px-5 rounded-xl shadow"
+            >
+              اطلب الآن
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+export default App;
